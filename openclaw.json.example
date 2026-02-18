@@ -1,0 +1,197 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.15"
+  },
+  "env": {
+    "BRAVE_SEARCH_API_KEY": "YOUR_BRAVE_API_KEY",
+    "OPENROUTER_API_KEY": "YOUR_OPENROUTER_API_KEY",
+    "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY",
+    "GOOGLE_API_KEY": "YOUR_GOOGLE_API_KEY",
+    "MOONSHOT_API_KEY": "YOUR_MOONSHOT_API_KEY",
+    "MINIMAX_API_KEY": "YOUR_MINIMAX_API_KEY"
+  },
+  "auth": {
+    "profiles": {
+      "google:default": {
+        "provider": "google",
+        "mode": "api_key"
+      },
+      "openrouter:default": {
+        "provider": "openrouter",
+        "mode": "api_key"
+      },
+      "moonshot:default": {
+        "provider": "moonshot",
+        "mode": "api_key"
+      },
+      "kimi-coding:default": {
+        "provider": "kimi-coding",
+        "mode": "api_key"
+      }
+    }
+  },
+  "models": {
+    "providers": {
+      "minimax": {
+        "baseUrl": "https://api.minimax.io/v1",
+        "apiKey": "YOUR_MINIMAX_API_KEY",
+        "auth": "api-key",
+        "api": "openai-completions",
+        "models": [
+          {
+            "id": "MiniMax-M2.5",
+            "name": "MiniMax-M2.5",
+            "reasoning": false,
+            "input": ["text"],
+            "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+            "contextWindow": 200000,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "kimi-coding/k2p5",
+        "fallbacks": [
+          "google/gemini-3-flash-preview",
+          "openrouter/openrouter/auto"
+        ]
+      },
+      "models": {
+        "google/gemini-3-flash-preview": { "alias": "gemini-flash", "params": { "context_caching": true, "cache_ttl": "3600s", "min_cache_tokens": 2048 } },
+        "openai/gpt-5.2": { "alias": "gpt52" },
+        "openrouter/openrouter/auto": { "alias": "openrouter" },
+        "google/gemini-3-pro-preview": { "alias": "gemini-pro" },
+        "openrouter/arcee-ai/trinity-large-preview:free": { "alias": "trinity" },
+        "openrouter/deepseek/deepseek-v3.2": { "alias": "deepseek" },
+        "moonshot/kimi-k2.5-instant": { "alias": "flashlite", "params": { "context_caching": true, "min_cache_tokens": 1024 } },
+        "openrouter/moonshotai/kimi-k2.5": { "alias": "kimi-or" },
+        "moonshot/kimi-k2.5": { "alias": "kimi", "params": { "context_caching": true, "min_cache_tokens": 1024 } },
+        "kimi-coding/k2p5": { "alias": "kimi-coding" },
+        "minimax/MiniMax-M2.5": { "alias": "minimax-coding" }
+      },
+      "workspace": "/home/node/.openclaw/workspace",
+      "compaction": { "mode": "default", "maxHistoryShare": 0.4, "memoryFlush": { "enabled": true, "softThresholdTokens": 400000 } },
+      "thinkingDefault": "medium",
+      "heartbeat": { "every": "6h", "model": "openrouter/openrouter/auto" },
+      "maxConcurrent": 4,
+      "subagents": { "maxConcurrent": 8, "model": "moonshot/kimi-k2.5-instant" }
+    },
+    "list": [
+      {
+        "id": "main",
+        "skills": ["nova", "context-health", "researcher", "archivist", "inbox-manager"],
+        "subagents": { "allowAgents": ["kimicoder", "minimaxcoder"] }
+      },
+      {
+        "id": "kimicoder",
+        "workspace": "/home/node/.openclaw/workspace",
+        "model": { "primary": "kimi-coding/k2p5" },
+        "skills": ["nova", "archivist", "researcher"],
+        "subagents": { "model": "kimi-coding/k2p5" }
+      },
+      {
+        "id": "minimaxcoder",
+        "workspace": "/home/node/.openclaw/workspace",
+        "model": { "primary": "minimax/MiniMax-M2.5" },
+        "skills": ["nova", "archivist", "researcher"],
+        "subagents": { "model": "minimax/MiniMax-M2.5" }
+      }
+    ]
+  },
+  "memory": {
+    "backend": "qmd",
+    "citations": "auto",
+    "qmd": {
+      "includeDefaultMemory": true,
+      "sessions": { "enabled": true },
+      "update": { "interval": "5m" },
+      "limits": { "maxResults": 6, "timeoutMs": 4000 }
+    }
+  },
+  "tools": {
+    "web": {
+      "search": { "enabled": true, "apiKey": "YOUR_BRAVE_API_KEY" },
+      "fetch": { "enabled": true }
+    },
+    "elevated": {
+      "enabled": true,
+      "allowFrom": {
+        "telegram": ["YOUR_TELEGRAM_USER_ID"],
+        "heartbeat": ["YOUR_TELEGRAM_USER_ID"],
+        "telegram:slash": ["YOUR_TELEGRAM_USER_ID"]
+      }
+    },
+    "exec": { "security": "full", "ask": "off", "notifyOnExit": false }
+  },
+  "messages": { "ackReactionScope": "group-all" },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto",
+    "restart": true,
+    "ownerAllowFrom": ["YOUR_TELEGRAM_USER_ID"]
+  },
+  "approvals": {
+    "exec": {
+      "enabled": true,
+      "mode": "both",
+      "targets": [{ "channel": "telegram", "to": "YOUR_TELEGRAM_USER_ID" }]
+    }
+  },
+  "hooks": {
+    "enabled": false,
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "boot-md": { "enabled": true },
+        "command-logger": { "enabled": true },
+        "session-memory": { "enabled": true },
+        "bootstrap-extra-files": { "enabled": true }
+      }
+    }
+  },
+  "channels": {
+    "telegram": {
+      "capabilities": { "inlineButtons": "all" },
+      "enabled": true,
+      "dmPolicy": "pairing",
+      "botToken": "YOUR_TELEGRAM_BOT_TOKEN",
+      "groupAllowFrom": ["YOUR_TELEGRAM_USER_ID"],
+      "groups": {
+        "YOUR_GROUP_ID": { "requireMention": false }
+      },
+      "groupPolicy": "allowlist",
+      "streamMode": "partial"
+    }
+  },
+  "discovery": { "mdns": { "mode": "minimal" } },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "GENERATE_A_UUID",
+      "rateLimit": { "maxAttempts": 10, "windowMs": 60000, "lockoutMs": 300000 }
+    },
+    "trustedProxies": ["127.0.0.1", "::1", "192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12"],
+    "tailscale": { "mode": "off", "resetOnExit": false },
+    "controlUi": { "dangerouslyDisableDeviceAuth": true }
+  },
+  "skills": {
+    "install": { "nodeManager": "npm" },
+    "entries": {
+      "nano-banana-pro": { "apiKey": "YOUR_BRAVE_API_KEY" },
+      "openai-image-gen": { "apiKey": "YOUR_OPENAI_API_KEY" },
+      "openai-whisper-api": { "apiKey": "YOUR_OPENAI_API_KEY" }
+    }
+  },
+  "plugins": {
+    "entries": {
+      "telegram": { "enabled": true }
+    }
+  }
+}

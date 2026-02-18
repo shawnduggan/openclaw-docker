@@ -1,0 +1,44 @@
+# Secrets & config with API keys
+openclaw.json
+
+# Agent state
+agents/
+backups/
+canvas/
+completions/
+credentials/
+delivery-queue/
+devices/
+media/
+identity/
+logs/
+memory/
+scripts/*
+!scripts/npm-wrapper.sh
+!scripts/pnpm-wrapper.sh
+subagents/
+telegram/
+
+# Workspaces
+workspace/
+workspace-*/
+
+storage/
+
+# Runtime state
+exec-approvals.json
+update-check.json
+
+# Claude config from VM
+.claude/
+
+# Cron (real jobs have Telegram IDs and personal details)
+cron/jobs.json
+cron/runs/
+*.bak
+
+# GOG CLI auth tokens
+.gog/
+
+# macOS
+.DS_Store

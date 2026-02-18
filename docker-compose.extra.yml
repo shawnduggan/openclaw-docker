@@ -1,0 +1,17 @@
+services:
+  openclaw-gateway:
+    volumes:
+      - openclaw-home:/home/node
+      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
+      - ${OPENCLAW_CONFIG_DIR}/.gog:/home/node/.config/gogcli
+    environment:
+      GOG_KEYRING_PASSWORD: ${GOG_KEYRING_PASSWORD}
+  openclaw-cli:
+    volumes:
+      - openclaw-home:/home/node
+      - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
+      - ${OPENCLAW_CONFIG_DIR}/.gog:/home/node/.config/gogcli
+    environment:
+      GOG_KEYRING_PASSWORD: ${GOG_KEYRING_PASSWORD}
+volumes:
+  openclaw-home:

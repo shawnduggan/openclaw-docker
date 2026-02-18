@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "example-morning-brief",
+      "agentId": "main",
+      "name": "Daily Morning Brief",
+      "enabled": true,
+      "schedule": {
+        "expr": "0 6 * * *",
+        "tz": "America/Halifax",
+        "kind": "cron"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Research and generate a daily morning brief. Focus on key tech news and AI advancements."
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "telegram",
+        "to": "YOUR_TELEGRAM_GROUP:YOUR_TOPIC_ID"
+      }
+    },
+    {
+      "id": "example-weekly-report",
+      "agentId": "main",
+      "name": "Weekly Intelligence Brief",
+      "enabled": true,
+      "schedule": {
+        "expr": "0 7 * * 1",
+        "tz": "America/Halifax",
+        "kind": "cron"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Compile a weekly intelligence brief synthesizing the past week's developments."
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "telegram",
+        "to": "YOUR_TELEGRAM_GROUP:YOUR_TOPIC_ID"
+      }
+    }
+  ]
+}

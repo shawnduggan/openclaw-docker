@@ -1,0 +1,81 @@
+FROM openclaw:local
+
+USER root
+
+# Dependencies for Homebrew + general build tools
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      git curl build-essential procps file sudo && \
+    curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+      > /etc/apt/sources.list.d/github-cli.list && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends gh && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Homebrew needs a non-root user with sudo access
+RUN echo "node ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/node
+
+# Install Homebrew as the node user
+USER node
+ENV HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
+ENV PATH="${HOMEBREW_PREFIX}/bin:${HOMEBREW_PREFIX}/sbin:${PATH}"
+RUN NONINTERACTIVE=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Switch back to root for remaining installs
+USER root
+
+# OpenCode (npm)
+RUN npm install -g opencode-ai
+
+# Claude Code (native installer — npm package is deprecated)
+# Install as node user, then copy binary to /usr/local/bin since /home/node is a volume mount
+USER node
+RUN curl -fsSL https://claude.ai/install.sh | bash -s stable
+USER root
+RUN cp /home/node/.local/bin/claude /usr/local/bin/claude
+ENV PATH="/home/node/.local/bin:${PATH}"
+
+# uv — install to /usr/local so all users can access it
+RUN curl -LsSf https://astral.sh/uv/install.sh | env INSTALLER_NO_MODIFY_PATH=1 sh && \
+    mv /root/.local/bin/uv /usr/local/bin/uv && \
+    mv /root/.local/bin/uvx /usr/local/bin/uvx
+
+# Kimi CLI — install to a shared prefix
+ENV UV_TOOL_DIR=/opt/uv-tools
+ENV UV_PYTHON_INSTALL_DIR=/opt/uv-python
+RUN uv tool install kimi-cli && \
+    chmod -R a+rX /opt/uv-tools /opt/uv-python
+
+# Put kimi/kimi-cli on PATH for all users
+ENV PATH="/opt/uv-tools/kimi-cli/bin:${PATH}"
+
+# Fix Node.js HTTPS/TLS in container (can't find CA certs without this)
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+
+# QMD (local-first memory search sidecar)
+RUN npm install -g @tobilu/qmd
+
+# gogcli (Google Workspace CLI — Gmail, Calendar, Drive, etc.)
+ARG TARGETARCH
+RUN GOGCLI_VERSION=0.11.0 && \
+    curl -fsSL "https://github.com/steipete/gogcli/releases/download/v${GOGCLI_VERSION}/gogcli_${GOGCLI_VERSION}_linux_${TARGETARCH}.tar.gz" \
+      | tar xz -C /usr/local/bin gog
+
+# Make "openclaw" command available
+RUN ln -s /app/openclaw.mjs /usr/local/bin/openclaw 2>/dev/null || \
+    printf '#!/bin/sh\nexec node /app/dist/index.js "$@"\n' > /usr/local/bin/openclaw && \
+    chmod +x /usr/local/bin/openclaw
+
+# Fix cross-platform node_modules/.bin/ permissions (macOS host -> Linux container)
+ARG SCRIPTS_HASH
+COPY scripts/npm-wrapper.sh scripts/pnpm-wrapper.sh /usr/local/lib/
+RUN chmod +x /usr/local/lib/npm-wrapper.sh /usr/local/lib/pnpm-wrapper.sh && \
+    mkdir -p /usr/local/lib/npm-wrap && \
+    ln -s /usr/local/lib/npm-wrapper.sh /usr/local/lib/npm-wrap/npm && \
+    ln -s /usr/local/lib/pnpm-wrapper.sh /usr/local/lib/npm-wrap/pnpm
+ENV PATH="/usr/local/lib/npm-wrap:${PATH}"
+
+USER node
