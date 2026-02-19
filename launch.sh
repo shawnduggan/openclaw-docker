@@ -11,6 +11,13 @@ if ! git -C "$REPO_DIR" pull --ff-only; then
   echo "    ⚠ git pull failed (merge conflict?). Continuing with current source."
 fi
 
+# ── Preflight checks ──────────────────────────────────
+if [[ ! -f "$DATA_DIR/openclaw.json" ]]; then
+  echo "Error: openclaw.json not found. Copy the example and fill in your details:"
+  echo "  cp $DATA_DIR/openclaw.json.example $DATA_DIR/openclaw.json"
+  exit 1
+fi
+
 # ── Config ─────────────────────────────────────────────
 export OPENCLAW_CONFIG_DIR="$DATA_DIR"
 export OPENCLAW_WORKSPACE_DIR="$DATA_DIR/workspace"
