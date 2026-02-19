@@ -41,7 +41,14 @@ The dashboard URL (with auth token) is printed when launch finishes.
 
 ### Path configuration
 
-`launch.sh` expects the OpenClaw source repo at `~/Dev/openclaw`. If yours is elsewhere, edit `REPO_DIR` at the top of `launch.sh`. The config directory (`DATA_DIR`) is auto-detected from wherever you cloned this repo.
+`launch.sh` uses two path variables (set at the top of the script):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `REPO_DIR` | `~/Dev/openclaw` | OpenClaw source repo (pulled from git on every launch) |
+| `DATA_DIR` | Auto-detected | This repo's directory (where `openclaw.json` lives) |
+
+If you cloned the OpenClaw source somewhere other than `~/Dev/openclaw`, edit `REPO_DIR` in `launch.sh`.
 
 ## Update Workflow
 
@@ -51,7 +58,7 @@ After the initial setup, updating is one command:
 ~/openclaw-docker/launch.sh
 ```
 
-This pulls the latest OpenClaw source, rebuilds both Docker images (base + tools), writes the `.env` file, and restarts the gateway. If a build fails, it falls back to the previous working image.
+This pulls the latest OpenClaw source from `REPO_DIR`, rebuilds both Docker images (base + tools), writes the `.env` file, and restarts the gateway. If a build fails, it falls back to the previous working image.
 
 ## Tools in the Container
 
