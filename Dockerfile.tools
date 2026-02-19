@@ -78,4 +78,7 @@ RUN chmod +x /usr/local/lib/npm-wrapper.sh /usr/local/lib/pnpm-wrapper.sh && \
     ln -s /usr/local/lib/pnpm-wrapper.sh /usr/local/lib/npm-wrap/pnpm
 ENV PATH="/usr/local/lib/npm-wrap:${PATH}"
 
+# Disable git pager (less) so commands like `git branch` print directly
+RUN git config --system core.pager cat
+
 USER node
