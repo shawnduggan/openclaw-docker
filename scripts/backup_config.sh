@@ -8,18 +8,7 @@ SRC_DIR="/home/node/.openclaw/workspace"
 DOCS_DIR="/home/node/.openclaw/workspace/documents"
 JARVIS_REPO="shawnduggan/Jarvis"
 
-# Files to backup
-FILES=(
-  "AGENTS.md"
-  "MEMORY.md"
-  "HEARTBEAT.md"
-  "SOUL.md"
-  "IDENTITY.md"
-  "USER.md"
-  "TOOLS.md"
-)
-
-# Also backup openclaw.json from parent
+# Extra files outside the workspace root to backup
 EXTRA_FILES=(
   "/home/node/.openclaw/openclaw.json"
   "/home/node/.openclaw/cron/jobs.json"
@@ -27,24 +16,19 @@ EXTRA_FILES=(
 
 echo "=== Config Backup $(date) ==="
 
-# Backup workspace root files
-for file in "${FILES[@]}"; do
-  src="$SRC_DIR/$file"
-  dst="$BACKUP_DIR/$file"
-
-  if [ -f "$src" ]; then
-    # If destination exists, backup old version
-    if [ -f "$dst" ]; then
-      mv "$dst" "$BACKUP_DIR/$file.bak-$DATE_STAMP"
-    fi
-    cp "$src" "$dst"
-    echo "✓ Copied: $file"
-  else
-    echo "⚠ Missing: $file"
+# Backup all .md and .json files from workspace root (dynamic scan)
+for file in "$SRC_DIR"/*.md "$SRC_DIR"/*.json; do
+  [ -f "$file" ] || continue
+  filename=$(basename "$file")
+  dst="$BACKUP_DIR/$filename"
+  if [ -f "$dst" ]; then
+    mv "$dst" "$BACKUP_DIR/$filename.bak-$DATE_STAMP"
   fi
+  cp "$file" "$dst"
+  echo "✓ Copied: $filename"
 done
 
-# Backup extra files
+# Backup extra files from outside workspace
 for file in "${EXTRA_FILES[@]}"; do
   if [ -f "$file" ]; then
     filename=$(basename "$file")
@@ -57,19 +41,18 @@ for file in "${EXTRA_FILES[@]}"; do
   fi
 done
 
-# Backup skills folder
+# Backup skills folder (all .md files)
 SKILLS_DIR="$SRC_DIR/skills"
 if [ -d "$SKILLS_DIR" ]; then
   for file in "$SKILLS_DIR"/*.md; do
-    if [ -f "$file" ]; then
-      filename=$(basename "$file")
-      dst="$BACKUP_DIR/$filename"
-      if [ -f "$dst" ]; then
-        mv "$dst" "$BACKUP_DIR/$filename.bak-$DATE_STAMP"
-      fi
-      cp "$file" "$dst"
-      echo "✓ Copied skill: $filename"
+    [ -f "$file" ] || continue
+    filename=$(basename "$file")
+    dst="$BACKUP_DIR/$filename"
+    if [ -f "$dst" ]; then
+      mv "$dst" "$BACKUP_DIR/$filename.bak-$DATE_STAMP"
     fi
+    cp "$file" "$dst"
+    echo "✓ Copied skill: $filename"
   done
 fi
 
@@ -138,21 +121,29 @@ for file in "$BACKUP_DIR"/*; do
   echo "    + config/$filename"
 done
 
-# Config subdirectories (e.g. cron/)
-if [ -d "$BACKUP_DIR/cron" ]; then
-  for file in "$BACKUP_DIR/cron"/*; do
-    [ -f "$file" ] || continue
+# Config subdirectories (dynamic scan)
+for config_subdir in "$BACKUP_DIR"/*/; do
+  [ -d "$config_subdir" ] || continue
+  subdir_name=$(basename "$config_subdir")
+  while IFS= read -r -d '' file; do
     filename=$(basename "$file")
-    add_file "config/cron/$filename" "$file"
-    echo "    + config/cron/$filename"
-  done
-fi
+    case "$filename" in
+      .*|.gitkeep) continue ;;
+    esac
+    rel_path="${file#$BACKUP_DIR/}"
+    add_file "config/$rel_path" "$file"
+    echo "    + config/$rel_path"
+  done < <(find "$config_subdir" -type f -print0)
+done
 
-# 2) Documents directories (journals, projects, proposals, research, talentnet)
-DOC_SUBDIRS=("journals" "projects" "proposals" "research" "talentnet")
-for subdir in "${DOC_SUBDIRS[@]}"; do
-  dir="$DOCS_DIR/$subdir"
+# 2) All documents subdirectories (dynamic scan, skip config to avoid recursion)
+for dir in "$DOCS_DIR"/*/; do
   [ -d "$dir" ] || continue
+  subdir=$(basename "$dir")
+  # Skip config dir (that's already handled above) and hidden dirs
+  case "$subdir" in
+    config|.*) continue ;;
+  esac
   echo "  Adding documents/$subdir..."
   while IFS= read -r -d '' file; do
     filename=$(basename "$file")
