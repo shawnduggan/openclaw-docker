@@ -16,6 +16,7 @@ memory/
 scripts/*
 !scripts/npm-wrapper.sh
 !scripts/pnpm-wrapper.sh
+!scripts/backup_config.sh
 subagents/
 telegram/
 
