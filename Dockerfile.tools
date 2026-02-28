@@ -55,8 +55,13 @@ ENV PATH="/opt/uv-tools/kimi-cli/bin:${PATH}"
 # Fix Node.js HTTPS/TLS in container (can't find CA certs without this)
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
-# QMD (local-first memory search sidecar)
-RUN npm install -g @tobilu/qmd
+# QMD (local-first memory search sidecar) + mcporter (MCP runtime for keep-alive daemon)
+RUN npm install -g @tobilu/qmd mcporter
+
+# mcporter config — register qmd as a keep-alive stdio MCP server
+# Written to /etc/mcporter/ because /home/node is a volume mount (build-time files get hidden)
+COPY mcporter.json /etc/mcporter/mcporter.json
+ENV MCPORTER_CONFIG=/etc/mcporter/mcporter.json
 
 # gogcli (Google Workspace CLI — Gmail, Calendar, Drive, etc.)
 ARG TARGETARCH

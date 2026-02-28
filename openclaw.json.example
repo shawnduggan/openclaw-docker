@@ -2,6 +2,7 @@
   "meta": {
     "lastTouchedVersion": "2026.2.15"
   },
+  "logging": { "level": "info", "maxFileBytes": 10485760 },
   "env": {
     "BRAVE_SEARCH_API_KEY": "YOUR_BRAVE_API_KEY",
     "OPENROUTER_API_KEY": "YOUR_OPENROUTER_API_KEY",
@@ -76,10 +77,11 @@
       },
       "workspace": "/home/node/.openclaw/workspace",
       "compaction": { "mode": "default", "maxHistoryShare": 0.4, "memoryFlush": { "enabled": true, "softThresholdTokens": 400000 } },
+      "imageModel": "anthropic/claude-haiku-4-5",
       "thinkingDefault": "medium",
       "heartbeat": { "every": "6h", "model": "openrouter/openrouter/auto" },
       "maxConcurrent": 4,
-      "subagents": { "maxConcurrent": 8, "model": "moonshot/kimi-k2.5-instant" }
+      "subagents": { "maxConcurrent": 8, "model": "moonshot/kimi-k2.5-instant", "maxSpawnDepth": 3, "maxChildrenPerAgent": 5 }
     },
     "list": [
       {
@@ -110,8 +112,12 @@
       "includeDefaultMemory": true,
       "sessions": { "enabled": true },
       "update": { "interval": "5m" },
-      "limits": { "maxResults": 6, "timeoutMs": 4000 }
+      "limits": { "maxResults": 6, "timeoutMs": 4000 },
+      "mcporter": { "enabled": true, "startDaemon": true }
     }
+  },
+  "session": {
+    "maintenance": { "mode": "enforce", "pruneAfter": "30d" }
   },
   "tools": {
     "web": {
@@ -126,7 +132,8 @@
         "telegram:slash": ["YOUR_TELEGRAM_USER_ID"]
       }
     },
-    "exec": { "security": "full", "ask": "off", "notifyOnExit": false }
+    "exec": { "security": "full", "ask": "off", "notifyOnExit": false },
+    "loopDetection": { "enabled": true }
   },
   "messages": { "ackReactionScope": "group-all" },
   "commands": {
@@ -165,7 +172,7 @@
         "YOUR_GROUP_ID": { "requireMention": false }
       },
       "groupPolicy": "allowlist",
-      "streamMode": "partial"
+      "streaming": "partial"
     }
   },
   "discovery": { "mdns": { "mode": "minimal" } },
