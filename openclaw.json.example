@@ -107,7 +107,7 @@
     "backend": "qmd",
     "qmd": {
       "sessions": { "enabled": true },
-      "mcporter": { "enabled": true }
+      "mcporter": { "enabled": false }
     }
   },
   "session": {
