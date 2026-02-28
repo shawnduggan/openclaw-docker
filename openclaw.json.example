@@ -2,7 +2,6 @@
   "meta": {
     "lastTouchedVersion": "2026.2.15"
   },
-  "logging": { "level": "info", "maxFileBytes": 10485760 },
   "env": {
     "BRAVE_SEARCH_API_KEY": "YOUR_BRAVE_API_KEY",
     "OPENROUTER_API_KEY": "YOUR_OPENROUTER_API_KEY",
@@ -80,8 +79,7 @@
       "imageModel": "anthropic/claude-haiku-4-5",
       "thinkingDefault": "medium",
       "heartbeat": { "every": "6h", "model": "openrouter/openrouter/auto" },
-      "maxConcurrent": 4,
-      "subagents": { "maxConcurrent": 8, "model": "moonshot/kimi-k2.5-instant", "maxSpawnDepth": 3, "maxChildrenPerAgent": 5 }
+      "subagents": { "model": "moonshot/kimi-k2.5-instant", "maxSpawnDepth": 3 }
     },
     "list": [
       {
@@ -107,13 +105,9 @@
   },
   "memory": {
     "backend": "qmd",
-    "citations": "auto",
     "qmd": {
-      "includeDefaultMemory": true,
       "sessions": { "enabled": true },
-      "update": { "interval": "5m" },
-      "limits": { "maxResults": 6, "timeoutMs": 4000 },
-      "mcporter": { "enabled": true, "startDaemon": true }
+      "mcporter": { "enabled": true }
     }
   },
   "session": {
@@ -137,9 +131,6 @@
   },
   "messages": { "ackReactionScope": "group-all" },
   "commands": {
-    "native": "auto",
-    "nativeSkills": "auto",
-    "restart": true,
     "ownerAllowFrom": ["YOUR_TELEGRAM_USER_ID"]
   },
   "approvals": {
@@ -165,13 +156,11 @@
     "telegram": {
       "capabilities": { "inlineButtons": "all" },
       "enabled": true,
-      "dmPolicy": "pairing",
       "botToken": "YOUR_TELEGRAM_BOT_TOKEN",
       "groupAllowFrom": ["YOUR_TELEGRAM_USER_ID"],
       "groups": {
         "YOUR_GROUP_ID": { "requireMention": false }
       },
-      "groupPolicy": "allowlist",
       "streaming": "partial"
     }
   },
