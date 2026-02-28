@@ -4,7 +4,7 @@ A batteries-included Docker companion for [OpenClaw](https://github.com/openclaw
 
 ## What's Included
 
-- **`Dockerfile.tools`** — Extends the base OpenClaw image with Claude Code, Kimi CLI, OpenCode, GitHub CLI, QMD (memory search), and Homebrew
+- **`Dockerfile.tools`** — Extends the base OpenClaw image with Claude Code, Kimi CLI, OpenCode, GitHub CLI, QMD + mcporter (memory search), and Homebrew
 - **`launch.sh`** — One-command update: pulls latest source, rebuilds both images, restarts the gateway. Falls back to previous images if a build fails
 - **`openclaw.json.example`** — Sanitized config template with all the knobs documented
 - **`cron/jobs.json`** — Cron job definitions (morning briefs, research reports, journaling, maintenance)
@@ -69,6 +69,7 @@ This pulls the latest OpenClaw source from `REPO_DIR`, rebuilds both Docker imag
 | Kimi CLI | uv (Python >=3.12) | AI coding assistant |
 | GitHub CLI | apt (official repo) | Git operations |
 | QMD | npm | Local memory search with BM25 + vectors |
+| mcporter | npm | MCP runtime — keeps QMD warm via keep-alive daemon |
 | gogcli | Binary | Google Workspace CLI (Gmail, Calendar, Drive) |
 | Homebrew | Linuxbrew | Package manager for skill dependencies |
 
@@ -82,6 +83,18 @@ Tool logins persist across rebuilds via a Docker volume.
 - **Kimi CLI Python version** — Requires >=3.12 but base image has 3.11; solved with `uv` to a shared prefix
 - **Homebrew as root** — Brew refuses to run as root; installed as `node` user with passwordless sudo
 - **Build failures** — `launch.sh` gracefully falls back to previous images instead of leaving you broken
+
+## Config Philosophy
+
+`openclaw.json` should only contain fields that **differ from upstream defaults**. If a value matches what OpenClaw would use anyway, leave it out. This means:
+
+- When upstream improves a default (e.g. bumps a timeout, adds a new search mode), you get the improvement automatically.
+- Config drift becomes visible — every line in your config is a deliberate choice, not a stale copy of a default.
+- New upstream features that ship with safe defaults just work without touching your config.
+
+**What belongs in your config:** API keys, secrets, model choices, agent definitions, opt-in features (like `memory.qmd.mcporter.enabled`), and values you've intentionally overridden.
+
+**What doesn't:** Anything that restates the upstream default — timeouts, limits, search modes, rate limits, etc. If you're not sure whether a value is a default, check `~/Dev/openclaw/src/config/defaults.ts` and the relevant `backend-config.ts` or `zod-schema.*.ts` files.
 
 ## Example Files
 
