@@ -1,79 +1,27 @@
 #!/bin/bash
-# Backup workspace config files to documents/config, then push to GitHub
-# This script COPIES files - it never deletes or moves source files
+# Push workspace config and documents to GitHub for versioned backup
+# Uses Git Data API for atomic commits (no .git dir needed)
 
-BACKUP_DIR="/home/node/.openclaw/workspace/documents/config"
-DATE_STAMP=$(date '+%Y%m%d')
+JARVIS_REPO="shawnduggan/Jarvis"
 SRC_DIR="/home/node/.openclaw/workspace"
 DOCS_DIR="/home/node/.openclaw/workspace/documents"
-JARVIS_REPO="shawnduggan/Jarvis"
 
 # Extra files outside the workspace root to backup
 EXTRA_FILES=(
   "/home/node/.openclaw/openclaw.json"
-  "/home/node/.openclaw/cron/jobs.json"
 )
 
-echo "=== Config Backup $(date) ==="
-
-# Backup all .md and .json files from workspace root (dynamic scan)
-for file in "$SRC_DIR"/*.md "$SRC_DIR"/*.json; do
-  [ -f "$file" ] || continue
-  filename=$(basename "$file")
-  dst="$BACKUP_DIR/$filename"
-  if [ -f "$dst" ]; then
-    mv "$dst" "$BACKUP_DIR/$filename.bak-$DATE_STAMP"
-  fi
-  cp "$file" "$dst"
-  echo "✓ Copied: $filename"
-done
-
-# Backup extra files from outside workspace
-for file in "${EXTRA_FILES[@]}"; do
-  if [ -f "$file" ]; then
-    filename=$(basename "$file")
-    dst="$BACKUP_DIR/$filename"
-    if [ -f "$dst" ]; then
-      mv "$dst" "$BACKUP_DIR/$filename.bak-$DATE_STAMP"
-    fi
-    cp "$file" "$dst"
-    echo "✓ Copied: $filename"
-  fi
-done
-
-# Backup skills folder (all .md files)
-SKILLS_DIR="$SRC_DIR/skills"
-if [ -d "$SKILLS_DIR" ]; then
-  for file in "$SKILLS_DIR"/*.md; do
-    [ -f "$file" ] || continue
-    filename=$(basename "$file")
-    dst="$BACKUP_DIR/$filename"
-    if [ -f "$dst" ]; then
-      mv "$dst" "$BACKUP_DIR/$filename.bak-$DATE_STAMP"
-    fi
-    cp "$file" "$dst"
-    echo "✓ Copied skill: $filename"
-  done
-fi
-
-echo "=== Local backup complete ==="
-
-# ─── Offsite push to GitHub ─────────────────────────────────────────
-# Push config and documents to the private Jarvis repo using gh api.
-# Uses the Git Data API for a single atomic commit (no .git dir needed).
-# Note: uses gh --jq and node (not jq) since jq isn't in the container.
+echo "=== GitHub Backup $(date) ==="
 
 if ! command -v gh &>/dev/null; then
-  echo "⚠ gh CLI not found — skipping offsite push"
-  exit 0
+  echo "⚠ gh CLI not found — aborting"
+  exit 1
 fi
 
 if ! gh auth status &>/dev/null 2>&1; then
-  echo "⚠ gh not authenticated — skipping offsite push"
-  exit 0
+  echo "⚠ gh not authenticated — aborting"
+  exit 1
 fi
-
-echo "=== Pushing to $JARVIS_REPO ==="
 
 # Temp file to collect tree entries (one JSON object per line)
 TREE_FILE=$(mktemp)
@@ -86,11 +34,11 @@ add_file() {
   local local_path="$2"
   [ -f "$local_path" ] || return
 
-  # Create blob via API (base64 encode, use gh --jq to extract sha)
+  # Create blob via API (base64 encode)
   local b64
   b64=$(base64 < "$local_path")
 
-  # Write JSON body to temp file to avoid heredoc quoting issues with large base64
+  # Write JSON body to temp file
   local body_file
   body_file=$(mktemp)
   node -e "process.stdout.write(JSON.stringify({content:process.argv[1],encoding:'base64'}))" "$b64" > "$body_file"
@@ -109,41 +57,28 @@ add_file() {
   FILE_COUNT=$((FILE_COUNT + 1))
 }
 
-# 1) Config files from backup dir (skip .bak-* files, .gitkeep)
-echo "  Adding config files..."
-for file in "$BACKUP_DIR"/*; do
+# 1) Config files from workspace root (*.md, *.json)
+echo "  Adding workspace config files..."
+for file in "$SRC_DIR"/*.md "$SRC_DIR"/*.json; do
   [ -f "$file" ] || continue
   filename=$(basename "$file")
-  case "$filename" in
-    *.bak-*|.gitkeep) continue ;;
-  esac
   add_file "config/$filename" "$file"
   echo "    + config/$filename"
 done
 
-# Config subdirectories (dynamic scan)
-for config_subdir in "$BACKUP_DIR"/*/; do
-  [ -d "$config_subdir" ] || continue
-  subdir_name=$(basename "$config_subdir")
-  while IFS= read -r -d '' file; do
+# 2) Extra files (openclaw.json from repo root)
+for file in "${EXTRA_FILES[@]}"; do
+  if [ -f "$file" ]; then
     filename=$(basename "$file")
-    case "$filename" in
-      .*|.gitkeep) continue ;;
-    esac
-    rel_path="${file#$BACKUP_DIR/}"
-    add_file "config/$rel_path" "$file"
-    echo "    + config/$rel_path"
-  done < <(find "$config_subdir" -type f -print0)
+    add_file "config/$filename" "$file"
+    echo "    + config/$filename"
+  fi
 done
 
-# 2) All documents subdirectories (dynamic scan, skip config to avoid recursion)
+# 3) All documents subdirectories
 for dir in "$DOCS_DIR"/*/; do
   [ -d "$dir" ] || continue
   subdir=$(basename "$dir")
-  # Skip config dir (that's already handled above) and hidden dirs
-  case "$subdir" in
-    config|.*) continue ;;
-  esac
   echo "  Adding documents/$subdir..."
   while IFS= read -r -d '' file; do
     filename=$(basename "$file")
@@ -156,6 +91,21 @@ for dir in "$DOCS_DIR"/*/; do
   done < <(find "$dir" -type f -print0)
 done
 
+# 4) Memory folder (daily notes, research, lessons)
+MEMORY_DIR="$SRC_DIR/memory"
+if [ -d "$MEMORY_DIR" ]; then
+  echo "  Adding memory..."
+  while IFS= read -r -d '' file; do
+    filename=$(basename "$file")
+    case "$filename" in
+      .*|.gitkeep) continue ;;
+    esac
+    rel_path="${file#$SRC_DIR/}"
+    add_file "$rel_path" "$file"
+    echo "    + $rel_path"
+  done < <(find "$MEMORY_DIR" -type f -name "*.md" -print0)
+fi
+
 if [ "$FILE_COUNT" -eq 0 ]; then
   echo "⚠ No files to push"
   exit 0
@@ -163,7 +113,7 @@ fi
 
 echo "  Creating tree with $FILE_COUNT files..."
 
-# Build tree JSON from collected entries and create via API
+# Build tree JSON and create via API
 TREE_BODY=$(node -e "
   const lines = require('fs').readFileSync(process.argv[1],'utf8').trim().split('\n');
   const tree = lines.map(l => JSON.parse(l));
