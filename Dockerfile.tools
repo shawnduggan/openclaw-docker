@@ -5,7 +5,7 @@ USER root
 # Dependencies for Homebrew + general build tools
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      git curl build-essential procps file sudo cmake && \
+      git curl build-essential procps file sudo && \
     curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
       -o /usr/share/keyrings/githubcli-archive-keyring.gpg && \
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
@@ -54,24 +54,6 @@ ENV PATH="/opt/uv-tools/kimi-cli/bin:${PATH}"
 
 # Fix Node.js HTTPS/TLS in container (can't find CA certs without this)
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
-
-# QMD (local-first memory search sidecar) + mcporter (MCP runtime for keep-alive daemon)
-# Force CPU-only build — no GPU passthrough in Docker on Mac, so CUDA/Metal/Vulkan probes
-# always fail and waste time rebuilding on every query without these flags
-ENV NODE_LLAMA_CPP_CMAKE_OPTION_GGML_CUDA=OFF \
-    NODE_LLAMA_CPP_CMAKE_OPTION_GGML_METAL=OFF \
-    NODE_LLAMA_CPP_CMAKE_OPTION_GGML_VULKAN=OFF
-# Pin node-llama-cpp to 3.15.1 — 3.16+ introduced a reranker regression
-# (Qwen3 reranker hangs; see ggml-org/llama.cpp#17743). Remove pin when fixed upstream.
-RUN npm install -g @tobilu/qmd mcporter && \
-    cd /usr/local/lib/node_modules/@tobilu/qmd && \
-    npm install node-llama-cpp@3.15.1 && \
-    chown -R node:node /usr/local/lib/node_modules/@tobilu/qmd/node_modules/node-llama-cpp
-
-# mcporter config — register qmd as a keep-alive stdio MCP server
-# Written to /etc/mcporter/ because /home/node is a volume mount (build-time files get hidden)
-COPY mcporter.json /etc/mcporter/mcporter.json
-ENV MCPORTER_CONFIG=/etc/mcporter/mcporter.json
 
 # gogcli (Google Workspace CLI — Gmail, Calendar, Drive, etc.)
 ARG TARGETARCH

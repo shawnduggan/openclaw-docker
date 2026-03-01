@@ -5,7 +5,7 @@ This repo contains the Docker customization layer for running OpenClaw on a Mac.
 ## Architecture
 
 - **Base image** (`openclaw:local`): built from `~/Dev/openclaw/Dockerfile`
-- **Tools image** (`openclaw:tools`): built from `Dockerfile.tools` here, extends base with Claude Code, Kimi CLI, OpenCode, gh, qmd, mcporter, Homebrew
+- **Tools image** (`openclaw:tools`): built from `Dockerfile.tools` here, extends base with Claude Code, Kimi CLI, OpenCode, gh, Homebrew
 - **Config**: `openclaw.json` (gitignored — contains secrets). Use `openclaw.json.example` as a template.
 - **Update workflow**: `./launch.sh` — pulls latest source, rebuilds both images, restarts gateway
 
@@ -23,7 +23,6 @@ This repo contains the Docker customization layer for running OpenClaw on a Mac.
 | `DOCKER-CHEATSHEET.md` | Common Docker commands and directory structure |
 | `CLONING-AGENT.md` | Guide for creating additional agent instances |
 | `CLOUD-DEPLOYMENT.md` | Guide for deploying to cloud providers |
-| `mcporter.json` | mcporter config — registers qmd as a keep-alive MCP server |
 
 ## Docker commands
 
@@ -42,7 +41,7 @@ docker compose -f ~/Dev/openclaw/docker-compose.yml logs -f openclaw-gateway
 
 `openclaw.json` should **only contain fields that differ from upstream defaults**. Do not restate default values — it creates drift surface and hides intentional choices among noise.
 
-- **Include**: API keys, secrets, model choices, agent definitions, opt-in features (`memory.qmd.mcporter.enabled`), values you've deliberately overridden
+- **Include**: API keys, secrets, model choices, agent definitions, opt-in features, values you've deliberately overridden
 - **Omit**: Timeouts, limits, search modes, rate limits, or anything that matches what upstream would use anyway
 - When upstream improves a default, you get the improvement automatically
 - Every line in the config should be a deliberate choice
@@ -61,8 +60,6 @@ To check if a value is a default, look at `~/Dev/openclaw/src/config/defaults.ts
 ## Gotchas
 
 - Kimi CLI needs Python >=3.12; installed via `uv` to `/opt/uv-tools/` (shared location)
-- qmd and mcporter installed via `npm install -g` (not bun — bun's module resolution breaks node)
-- mcporter config lives at `/etc/mcporter/mcporter.json` (not `~/.mcporter/`) because `/home/node` is a volume mount; `MCPORTER_CONFIG` env var points to it
 - `NODE_EXTRA_CA_CERTS` must be set for HTTPS to work in the container
 - Homebrew must be installed as non-root user (brew refuses root)
 - If base image build fails, `launch.sh` falls back to previous image

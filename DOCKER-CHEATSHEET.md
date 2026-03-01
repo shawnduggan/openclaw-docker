@@ -155,15 +155,12 @@ Replace `<CODE>` with the pairing code shown in the Telegram message.
 ~/openclaw-docker/
 ├── openclaw.json          # Main config (gateway, channels, agents, API keys)
 ├── launch.sh              # One-command update/rebuild/restart
-├── Dockerfile.tools       # Tools layer (Claude Code, Kimi CLI, OpenCode, gh, qmd, brew)
+├── Dockerfile.tools       # Tools layer (Claude Code, Kimi CLI, OpenCode, gh, brew)
 ├── agents/                # Agent data (auth profiles, session history)
 │   └── main/
 │       ├── agent/
 │       │   ├── auth-profiles.json   # API keys for providers
 │       │   └── models.json
-│       └── qmd/               # QMD memory search index (auto-created)
-│           ├── xdg-config/
-│           └── xdg-cache/
 ├── cron/                  # Cron job definitions
 │   └── jobs.json
 ├── credentials/           # Channel credentials (Telegram allowlists)
@@ -208,7 +205,6 @@ Replace `<CODE>` with the pairing code shown in the Telegram message.
 | Cron jobs | `~/openclaw-docker/cron/jobs.json` | Yes (your Mac) |
 | Agent workspace/code | `~/openclaw-docker/workspace/` | Yes (your Mac) |
 | Installed skills | `~/openclaw-docker/skills/` | Yes (your Mac) |
-| QMD memory index | `~/openclaw-docker/agents/main/qmd/` | Yes (your Mac) |
 | GOG CLI auth tokens | `~/openclaw-docker/.gog/` | Yes (your Mac) |
 | Tool logins (claude, gh) | Docker volume `openclaw-home` | Yes (Docker volume) |
 | Brew-installed packages | Inside container image | No (rebuilt each time) |
@@ -229,39 +225,6 @@ docker image prune
 # Nuclear option — remove all unused images, volumes, etc.
 # ⚠ WARNING: This deletes the openclaw-home volume (tool logins)!
 docker system prune -a --volumes
-```
-
-## Memory Search (QMD)
-
-QMD is the local memory search backend. It indexes markdown files and session transcripts for semantic recall.
-
-```bash
-# Check QMD status (inside the container shell)
-qmd --version
-
-# Manually trigger an index update
-XDG_CONFIG_HOME=/home/node/.openclaw/agents/main/qmd/xdg-config \
-XDG_CACHE_HOME=/home/node/.openclaw/agents/main/qmd/xdg-cache \
-qmd update
-
-# Run embeddings
-XDG_CONFIG_HOME=/home/node/.openclaw/agents/main/qmd/xdg-config \
-XDG_CACHE_HOME=/home/node/.openclaw/agents/main/qmd/xdg-cache \
-qmd embed
-```
-
-The gateway manages QMD automatically (updates every 5 min, embeds every 60 min). First search may be slow as QMD downloads local GGUF models.
-
-Config in `openclaw.json` under `memory`:
-```json
-"memory": {
-  "backend": "qmd",
-  "qmd": {
-    "includeDefaultMemory": true,
-    "sessions": { "enabled": true },
-    "update": { "interval": "5m" }
-  }
-}
 ```
 
 ## Troubleshooting
