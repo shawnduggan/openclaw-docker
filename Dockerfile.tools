@@ -56,7 +56,11 @@ ENV PATH="/opt/uv-tools/kimi-cli/bin:${PATH}"
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
 # QMD (local-first memory search sidecar) + mcporter (MCP runtime for keep-alive daemon)
-RUN npm install -g @tobilu/qmd mcporter
+# node-llama-cpp needs a writable localBuilds dir to compile the CPU backend at runtime
+# (installed as root but runs as node; no GPU in container so CUDA probe always fails)
+RUN npm install -g @tobilu/qmd mcporter && \
+    mkdir -p /usr/local/lib/node_modules/@tobilu/qmd/node_modules/node-llama-cpp/llama/localBuilds && \
+    chown -R node:node /usr/local/lib/node_modules/@tobilu/qmd/node_modules/node-llama-cpp/llama/localBuilds
 
 # mcporter config — register qmd as a keep-alive stdio MCP server
 # Written to /etc/mcporter/ because /home/node is a volume mount (build-time files get hidden)
