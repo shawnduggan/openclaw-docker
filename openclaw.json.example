@@ -103,11 +103,8 @@
       }
     ]
   },
-  "memory": {
-    "backend": "builtin"
-  },
   "session": {
-    "maintenance": { "mode": "enforce", "pruneAfter": "30d" }
+    "maintenance": { "mode": "enforce" }
   },
   "tools": {
     "web": {
@@ -167,15 +164,12 @@
     "bind": "loopback",
     "auth": {
       "mode": "token",
-      "token": "GENERATE_A_UUID",
-      "rateLimit": { "maxAttempts": 10, "windowMs": 60000, "lockoutMs": 300000 }
+      "token": "GENERATE_A_UUID"
     },
     "trustedProxies": ["127.0.0.1", "::1", "192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12"],
-    "tailscale": { "mode": "off", "resetOnExit": false },
     "controlUi": { "dangerouslyDisableDeviceAuth": true, "allowedOrigins": ["http://127.0.0.1:18789"] }
   },
   "skills": {
-    "install": { "nodeManager": "npm" },
     "entries": {
       "nano-banana-pro": { "apiKey": "YOUR_BRAVE_API_KEY" },
       "openai-image-gen": { "apiKey": "YOUR_OPENAI_API_KEY" },
