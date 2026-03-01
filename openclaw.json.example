@@ -104,11 +104,7 @@
     ]
   },
   "memory": {
-    "backend": "qmd",
-    "qmd": {
-      "sessions": { "enabled": true },
-      "mcporter": { "enabled": false }
-    }
+    "backend": "builtin"
   },
   "session": {
     "maintenance": { "mode": "enforce", "pruneAfter": "30d" }
