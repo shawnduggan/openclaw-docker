@@ -78,4 +78,8 @@ ENV PATH="/usr/local/lib/npm-wrap:${PATH}"
 # Disable git pager (less) so commands like `git branch` print directly
 RUN git config --system core.pager cat
 
+# Entrypoint wrapper — fixes .config ownership at runtime (volume mounts override build-time fixes)
+COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 USER node
