@@ -25,7 +25,6 @@ storage/
 # Runtime state
 exec-approvals.json
 update-check.json
-restart-sentinel.json
 
 # Claude config from VM
 .claude/
@@ -37,9 +36,6 @@ cron/runs/
 
 # GOG CLI auth tokens
 .gog/
-
-# Build/cleanup artifacts
-scripts/cleanup.log
 
 # macOS
 .DS_Store
